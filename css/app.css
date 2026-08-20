@@ -291,7 +291,7 @@ button { font-family: inherit; cursor: pointer; }
 }
 .icon-btn:active { background: var(--surface-2); transform: scale(0.94); }
 
-.icon-cog { width: 21px; height: 21px; display: block; }
+.icon-cog { width: 20px; height: 20px; display: block; }
 
 /* --------------------------------------------------------------- player */
 

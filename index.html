@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <title>Karaoke Mode</title>
-<link rel="stylesheet" href="css/app.css?v=17">
+<link rel="stylesheet" href="css/app.css?v=18">
 </head>
 <body>
 
@@ -86,18 +86,13 @@
     </div>
     <div class="header-actions">
       <button id="btn-settings" class="icon-btn" aria-label="Settings">
-        <!-- Six-tooth cog: a ring plus rotated teeth. Simpler than a single
-             traced gear path and stays crisp at small sizes. -->
-        <svg class="icon-cog" viewBox="0 0 24 24" aria-hidden="true" focusable="false">
-          <g fill="currentColor">
-            <rect x="10.8" y="1.4" width="2.4" height="4.6" rx="1.2"/>
-            <rect x="10.8" y="1.4" width="2.4" height="4.6" rx="1.2" transform="rotate(60 12 12)"/>
-            <rect x="10.8" y="1.4" width="2.4" height="4.6" rx="1.2" transform="rotate(120 12 12)"/>
-            <rect x="10.8" y="1.4" width="2.4" height="4.6" rx="1.2" transform="rotate(180 12 12)"/>
-            <rect x="10.8" y="1.4" width="2.4" height="4.6" rx="1.2" transform="rotate(240 12 12)"/>
-            <rect x="10.8" y="1.4" width="2.4" height="4.6" rx="1.2" transform="rotate(300 12 12)"/>
-          </g>
-          <circle cx="12" cy="12" r="5.9" fill="none" stroke="currentColor" stroke-width="2.2"/>
+        <!-- Standard outlined gear, from Bootstrap Icons (MIT licensed).
+             Eight rounded teeth with a hollow centre -- the shape people
+             already read as "settings" without having to think about it. -->
+        <svg class="icon-cog" viewBox="0 0 16 16" fill="currentColor"
+             aria-hidden="true" focusable="false">
+          <path d="M8 4.754a3.246 3.246 0 1 0 0 6.492 3.246 3.246 0 0 0 0-6.492M5.754 8a2.246 2.246 0 1 1 4.492 0 2.246 2.246 0 0 1-4.492 0"/>
+          <path d="M9.796 1.343c-.527-1.79-3.065-1.79-3.592 0l-.094.319a.873.873 0 0 1-1.255.52l-.292-.16c-1.64-.892-3.433.902-2.54 2.541l.159.292a.873.873 0 0 1-.52 1.255l-.319.094c-1.79.527-1.79 3.065 0 3.592l.319.094a.873.873 0 0 1 .52 1.255l-.16.292c-.892 1.64.901 3.434 2.541 2.54l.292-.159a.873.873 0 0 1 1.255.52l.094.319c.527 1.79 3.065 1.79 3.592 0l.094-.319a.873.873 0 0 1 1.255-.52l.292.16c1.64.893 3.434-.902 2.54-2.541l-.159-.292a.873.873 0 0 1 .52-1.255l.319-.094c1.79-.527 1.79-3.065 0-3.592l-.319-.094a.873.873 0 0 1-.52-1.255l.16-.292c.893-1.64-.902-3.433-2.541-2.54l-.292.159a.873.873 0 0 1-1.255-.52zm-2.633.283c.246-.835 1.428-.835 1.674 0l.094.319a1.873 1.873 0 0 0 2.693 1.115l.291-.16c.764-.415 1.6.42 1.184 1.185l-.159.292a1.873 1.873 0 0 0 1.116 2.692l.318.094c.835.246.835 1.428 0 1.674l-.319.094a1.873 1.873 0 0 0-1.115 2.693l.16.291c.415.764-.42 1.6-1.185 1.184l-.291-.159a1.873 1.873 0 0 0-2.693 1.116l-.094.318c-.246.835-1.428.835-1.674 0l-.094-.319a1.873 1.873 0 0 0-2.692-1.115l-.292.16c-.764.415-1.6-.42-1.184-1.185l.159-.291A1.873 1.873 0 0 0 1.945 8.93l-.319-.094c-.835-.246-.835-1.428 0-1.674l.319-.094A1.873 1.873 0 0 0 3.06 4.377l-.16-.292c-.415-.764.42-1.6 1.185-1.184l.292.159a1.873 1.873 0 0 0 2.692-1.115z"/>
         </svg>
       </button>
     </div>
@@ -228,6 +223,6 @@
   </div>
 </section>
 
-<script type="module" src="js/main.js?v=17"></script>
+<script type="module" src="js/main.js?v=18"></script>
 </body>
 </html>
