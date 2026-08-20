@@ -93,8 +93,11 @@
     rgba(0,0,0,0.07) 0 1px, rgba(0,0,0,0) 1px 4px);
   box-shadow: 0 6px 18px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(0,0,0,0.10);
 }
+:root[data-theme="light"] .vinyl::before {
+  border-color: rgba(0, 0, 0, 0.18);
+}
 :root[data-theme="light"] .vinyl::after {
-  box-shadow: 0 0 0 3px rgba(0,0,0,0.14), inset 0 0 0 1px rgba(0,0,0,0.18);
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.28);
 }
 
 /* The halo behind the active line has to be light to lift it off the page. */
@@ -350,18 +353,35 @@ button { font-family: inherit; cursor: pointer; }
 }
 .vinyl-art.is-loaded { opacity: 1; }
 
-/* Spindle hole, punched through the artwork. */
+/* Edge of the paper label. On a 12" LP the label is about 4" across, so
+   roughly a third of the diameter -- this faint ring is most of what makes
+   the disc read as a record rather than a circular crop of the artwork. */
+.vinyl::before {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 34%;
+  height: 34%;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  z-index: 2;
+  pointer-events: none;
+}
+
+/* Spindle hole. A 7/16" hole on a 12" record is under 4% of the diameter;
+   5% keeps it visible at small sizes without turning into a doughnut. */
 .vinyl::after {
   content: '';
   position: absolute;
   top: 50%; left: 50%;
-  width: 19%;
-  height: 19%;
+  width: 5%;
+  height: 5%;
   transform: translate(-50%, -50%);
   border-radius: 50%;
   background: var(--bg);
-  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.14);
-  z-index: 2;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.55);
+  z-index: 3;
 }
 
 @keyframes vinylSpin {
