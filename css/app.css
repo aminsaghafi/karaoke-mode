@@ -26,6 +26,7 @@
   --border: rgba(255, 255, 255, 0.14);
 
   --vinyl-size: 76px;
+  --cog-stroke: 1.7;   /* gear line weight, in the icon's 24-unit viewBox */
 
   /* Driven by the text-size setting */
   --lyric-size: 44px;
@@ -291,7 +292,14 @@ button { font-family: inherit; cursor: pointer; }
 }
 .icon-btn:active { background: var(--surface-2); transform: scale(0.94); }
 
-.icon-cog { width: 20px; height: 20px; display: block; }
+/* Set here rather than as an SVG attribute: var() only resolves through CSS,
+   not through presentation attributes. */
+.icon-cog {
+  width: 21px;
+  height: 21px;
+  display: block;
+  stroke-width: var(--cog-stroke, 1.7);
+}
 
 /* --------------------------------------------------------------- player */
 
