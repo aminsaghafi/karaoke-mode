@@ -7,13 +7,23 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <title>Karaoke Mode</title>
-<link rel="stylesheet" href="css/app.css?v=8">
+<link rel="stylesheet" href="css/app.css?v=9">
 </head>
 <body>
 
 <!-- Blurred artwork backdrop. Deliberately very dim: it should read as
      atmosphere, never as something competing for the driver's attention. -->
 <div id="backdrop" class="backdrop" aria-hidden="true"></div>
+
+<!-- Instrumental glow. Edge-hugging washes in colours sampled from the album
+     art. Sits above the backdrop and below the lyric column, so it frames the
+     screen without ever competing with the words. -->
+<div id="glow" class="glow" aria-hidden="true">
+  <span class="glow-blob glow-top"></span>
+  <span class="glow-blob glow-bottom"></span>
+  <span class="glow-blob glow-left"></span>
+  <span class="glow-blob glow-right"></span>
+</div>
 
 <!-- ============================ SETUP ============================ -->
 <section id="screen-setup" class="screen is-visible">
@@ -95,13 +105,9 @@
     <button id="overlay-action" class="btn btn-primary is-hidden"></button>
   </div>
 
-  <!-- Instrumental filler. Two states: an equalizer while the gap is long,
-       then a count-in as the next sung line approaches. -->
+  <!-- Count-in. The edge glow carries the long stretch of an instrumental;
+       these pips take over for the last few seconds before the vocal. -->
   <div id="gap-indicator" class="gap-indicator is-hidden">
-    <div id="gap-eq" class="eq">
-      <span></span><span></span><span></span><span></span><span></span>
-      <span></span><span></span><span></span><span></span>
-    </div>
     <div id="gap-countdown" class="countdown is-hidden">
       <span class="pip"></span><span class="pip"></span><span class="pip"></span>
     </div>
@@ -202,6 +208,6 @@
   </div>
 </section>
 
-<script type="module" src="js/main.js?v=8"></script>
+<script type="module" src="js/main.js?v=9"></script>
 </body>
 </html>

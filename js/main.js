@@ -20,6 +20,7 @@ import { CONFIG } from './config.js';
 import * as store from './lib/store.js';
 import { PlaybackClock } from './lib/clock.js';
 import { isSecureContextOk } from './lib/pkce.js';
+import { extractPalette } from './lib/palette.js';
 import { LyricsView } from './ui/lyricsView.js';
 import { fetchLyrics, searchLyrics, recordToLyrics } from './lyrics/lrclib.js';
 import { isDifferentTrack } from './sources/source.js';
@@ -57,7 +58,7 @@ function cacheElements() {
     'track-title', 'track-artist', 'btn-settings', 'lyrics',
     'vinyl', 'vinyl-art', 'unsynced-note', 'btn-find-synced',
     'overlay', 'overlay-icon', 'overlay-text', 'overlay-sub', 'overlay-action',
-    'gap-indicator', 'gap-eq', 'gap-countdown',
+    'gap-indicator', 'gap-countdown', 'glow',
     'time-current', 'time-total', 'progress-fill',
     'transport', 'btn-back5', 'btn-play', 'btn-fwd5', 'btn-pick',
     'search-input', 'btn-search', 'btn-search-close', 'search-status', 'search-results',
@@ -163,6 +164,37 @@ function setVinyl(url) {
   img.setAttribute('src', url);
 }
 
+/**
+ * Recolour the instrumental glow from the album art.
+ *
+ * extractPalette never rejects -- a blocked cross-origin read or a missing
+ * sleeve resolves to a neutral grey palette instead, so the glow degrades to
+ * something plain rather than disappearing or throwing mid-render.
+ */
+function applyPalette(url) {
+  extractPalette(url).then(function (colors) {
+    var root = document.documentElement.style;
+    root.setProperty('--glow-1', colors[0]);
+    root.setProperty('--glow-2', colors[1]);
+    root.setProperty('--glow-3', colors[2]);
+  });
+}
+
+/**
+ * Show the glow, swelling as the vocal gets closer.
+ *
+ * This is the honest half of "reacts to the music": there is no audio in this
+ * tab to analyse, so it cannot follow the beat. What it can follow is the
+ * lyric timeline -- the glow builds over the last 12s of an instrumental, so
+ * the room brightening actually means something is about to happen.
+ */
+function setGlow(on, untilNextMs) {
+  el['glow'].classList.toggle('is-on', Boolean(on));
+  if (!on) return;
+  var t = Math.max(0, Math.min(1, 1 - (untilNextMs / 12000)));
+  document.documentElement.style.setProperty('--glow-intensity', (0.45 + t * 0.55).toFixed(3));
+}
+
 /** The record turns only while the music does. */
 function setVinylSpinning(on) {
   el['vinyl'].classList.toggle('is-spinning', Boolean(on));
@@ -244,6 +276,7 @@ function handleState(state) {
     setVinyl(null);
     setVinylSpinning(false);
     setUnsyncedNote(false);
+    setGlow(false, 0);
 
     if (app.source && app.source.id === 'manual') {
       setOverlay('🎵', 'Pick a song', 'Search for what you are listening to, then tap to sync it up.',
@@ -263,6 +296,7 @@ function handleState(state) {
     el['time-total'].textContent = fmtTime(state.durationMs);
     setBackdrop(state.artworkUrl);
     setVinyl(state.artworkUrl);
+    applyPalette(state.artworkUrl);
 
     // New song: wipe the old lines instantly so we never show the wrong
     // lyrics against the right audio, even for a frame.
@@ -397,6 +431,7 @@ function renderNow() {
 
   if (!app.lyrics || !app.lyrics.lines.length || app.lyrics.synced === false) {
     el['gap-indicator'].classList.add('is-hidden');
+    setGlow(false, 0);
     return;
   }
 
@@ -406,6 +441,7 @@ function renderNow() {
   // sitting in a gap should not dance at you.
   var showGap = Boolean(info && info.inGap && app.clock.isPlaying() && el['overlay'].classList.contains('is-hidden'));
   el['gap-indicator'].classList.toggle('is-hidden', !showGap);
+  setGlow(showGap, info ? info.untilNextMs : 0);
   if (showGap) updateGapVisual(info.untilNextMs);
 }
 
@@ -424,7 +460,6 @@ var pipNodes = null;
 function updateGapVisual(untilNextMs) {
   var counting = untilNextMs <= COUNTIN_MS;
 
-  el['gap-eq'].classList.toggle('is-hidden', counting);
   el['gap-countdown'].classList.toggle('is-hidden', !counting);
   if (!counting) return;
 
