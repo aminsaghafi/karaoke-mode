@@ -25,7 +25,7 @@
   --surface-2: #1f1f1f;
   --border: rgba(255, 255, 255, 0.14);
 
-  --vinyl-size: 76px;
+  --vinyl-size: 108px;
   --cog-stroke: 1.7;   /* gear line weight, in the icon's 24-unit viewBox */
 
   /* Driven by the text-size setting */
@@ -355,8 +355,9 @@ button { font-family: inherit; cursor: pointer; }
   content: '';
   position: absolute;
   top: 50%; left: 50%;
-  width: 15px; height: 15px;
-  margin: -7.5px 0 0 -7.5px;
+  width: 19%;
+  height: 19%;
+  transform: translate(-50%, -50%);
   border-radius: 50%;
   background: var(--bg);
   box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.14);
