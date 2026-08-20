@@ -55,8 +55,10 @@ function cacheElements() {
     'spotify-badge', 'spotify-config', 'client-id', 'redirect-uri',
     'btn-spotify-connect', 'btn-spotify-forget', 'setup-error', 'setup-insecure',
     'track-title', 'track-artist', 'btn-settings', 'lyrics',
+    'vinyl', 'vinyl-art', 'unsynced-note', 'btn-find-synced',
     'overlay', 'overlay-icon', 'overlay-text', 'overlay-sub', 'overlay-action',
-    'gap-indicator', 'time-current', 'time-total', 'progress-fill',
+    'gap-indicator', 'gap-eq', 'gap-countdown',
+    'time-current', 'time-total', 'progress-fill',
     'transport', 'btn-back5', 'btn-play', 'btn-fwd5', 'btn-pick',
     'search-input', 'btn-search', 'btn-search-close', 'search-status', 'search-results',
     'btn-offset-down', 'btn-offset-up', 'offset-value', 'btn-backdrop',
@@ -104,6 +106,15 @@ function setOverlay(icon, text, sub, actionLabel, actionFn) {
   el['overlay'].classList.remove('is-hidden');
 }
 
+/**
+ * Explain a track that has words but no timestamps. LRCLIB stores plenty of
+ * these, and without a note the column simply never scrolls -- which looks
+ * exactly like the sync being broken.
+ */
+function setUnsyncedNote(show) {
+  el['unsynced-note'].classList.toggle('is-hidden', !show);
+}
+
 /* ------------------------------------------------------------- settings */
 
 var SIZES = { s: [32, 20], m: [44, 26], l: [56, 32], xl: [70, 40] };
@@ -127,6 +138,34 @@ function applyBackdropSetting(on) {
   el['btn-backdrop'].classList.toggle('is-on', on);
   if (!on) el['backdrop'].classList.remove('is-on');
   else if (app.state && app.state.artworkUrl) setBackdrop(app.state.artworkUrl);
+}
+
+/**
+ * Point the record at a new sleeve.
+ *
+ * The image fades in only once it has actually decoded -- swapping src
+ * directly leaves a blank disc or, worse, the previous track's artwork
+ * showing for however long the download takes.
+ */
+function setVinyl(url) {
+  var img = el['vinyl-art'];
+  if (!url) {
+    // No artwork available: fall back to the etched blank disc.
+    img.classList.remove('is-loaded');
+    img.removeAttribute('src');
+    return;
+  }
+  if (img.getAttribute('src') === url) return;
+
+  img.classList.remove('is-loaded');
+  img.onload = function () { img.classList.add('is-loaded'); };
+  img.onerror = function () { img.classList.remove('is-loaded'); };
+  img.setAttribute('src', url);
+}
+
+/** The record turns only while the music does. */
+function setVinylSpinning(on) {
+  el['vinyl'].classList.toggle('is-spinning', Boolean(on));
 }
 
 function setBackdrop(url) {
@@ -202,6 +241,9 @@ function handleState(state) {
     el['track-artist'].textContent = '';
     if (app.view) app.view.clear();
     el['backdrop'].classList.remove('is-on');
+    setVinyl(null);
+    setVinylSpinning(false);
+    setUnsyncedNote(false);
 
     if (app.source && app.source.id === 'manual') {
       setOverlay('🎵', 'Pick a song', 'Search for what you are listening to, then tap to sync it up.',
@@ -220,6 +262,7 @@ function handleState(state) {
     el['track-artist'].textContent = state.artist || '';
     el['time-total'].textContent = fmtTime(state.durationMs);
     setBackdrop(state.artworkUrl);
+    setVinyl(state.artworkUrl);
 
     // New song: wipe the old lines instantly so we never show the wrong
     // lyrics against the right audio, even for a frame.
@@ -254,6 +297,7 @@ function handleState(state) {
 /** Keep the play/pause glyph honest about what the clock is actually doing. */
 function updateTransport(isPlaying) {
   el['btn-play'].textContent = isPlaying ? '❚❚' : '▶';
+  setVinylSpinning(isPlaying);
 }
 
 function loadLyricsFor(state) {
@@ -289,9 +333,12 @@ function updateStatusOverlay() {
   if (!state) return;
 
   if (app.lookupPending) {
+    setUnsyncedNote(false);
     setOverlay('', '', '');   // brief; a spinner here would just flicker
     return;
   }
+
+  setUnsyncedNote(app.lyrics && app.lyrics.synced === false);
 
   if (app.lyrics && app.lyrics.instrumental) {
     setOverlay('🎼', 'Instrumental', 'No lyrics for this one.');
@@ -355,10 +402,43 @@ function renderNow() {
 
   var info = app.view.update(pos);
 
-  // Instrumental dots, but only while actually playing -- a paused song
-  // sitting in a gap should not pulse at you.
+  // Instrumental filler, but only while actually playing -- a paused song
+  // sitting in a gap should not dance at you.
   var showGap = Boolean(info && info.inGap && app.clock.isPlaying() && el['overlay'].classList.contains('is-hidden'));
   el['gap-indicator'].classList.toggle('is-hidden', !showGap);
+  if (showGap) updateGapVisual(info.untilNextMs);
+}
+
+/* How long before the next line we switch from equalizer to count-in. Three
+   pips at roughly one per second, which is the cadence a band counts in on. */
+var COUNTIN_MS = 3150;
+var pipNodes = null;
+
+/**
+ * Swap between the two instrumental states and drive the count-in.
+ *
+ * The equalizer is pure decoration -- there is no audio in this tab to analyse,
+ * so it cannot react to the music. The count-in is the opposite: it carries
+ * real information, telling you exactly when to come back in.
+ */
+function updateGapVisual(untilNextMs) {
+  var counting = untilNextMs <= COUNTIN_MS;
+
+  el['gap-eq'].classList.toggle('is-hidden', counting);
+  el['gap-countdown'].classList.toggle('is-hidden', !counting);
+  if (!counting) return;
+
+  if (!pipNodes) {
+    pipNodes = el['gap-countdown'].querySelectorAll('.pip');
+  }
+
+  // Light one pip per remaining beat, extinguishing left to right.
+  var perPip = COUNTIN_MS / pipNodes.length;
+  var lit = Math.ceil(Math.max(0, untilNextMs) / perPip);
+
+  for (var i = 0; i < pipNodes.length; i++) {
+    pipNodes[i].classList.toggle('is-lit', i < lit);
+  }
 }
 
 /* ---------------------------------------------------------------- search */
@@ -576,6 +656,7 @@ function wireEvents() {
   });
 
   el['btn-pick'].addEventListener('click', openSearch);
+  el['btn-find-synced'].addEventListener('click', openSearch);
 
   // --- search
   $('search-form').addEventListener('submit', function (e) {
@@ -706,4 +787,9 @@ if (document.readyState === 'loading') {
 }
 
 // Handy for poking at state from the Tesla browser's console during setup.
+// renderNow is exposed too so a frame can be forced by hand -- the browser
+// pauses rAF whenever the tab is hidden, which makes the live view
+// untestable from a console otherwise.
+app.renderNow = renderNow;
+app.updateStatusOverlay = updateStatusOverlay;
 window.__lyrics = app;

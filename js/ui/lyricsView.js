@@ -149,8 +149,12 @@ LyricsView.prototype._gapInfo = function (idx, positionMs) {
 
   // Only call it instrumental if the whole gap is long AND the current line
   // is silent or we are before the song's first line.
+  //
+  // Note this runs right up to the next line (until > 0) rather than cutting
+  // out early. The count-in needs those last seconds -- they are the whole
+  // point of it -- so stopping short would strand the final beat.
   var currentIsBlank = (idx < 0) || !this.lines[idx].text;
-  var inGap = currentIsBlank && gapLength > CONFIG.ui.instrumentalGapMs && until > 1200;
+  var inGap = currentIsBlank && gapLength > CONFIG.ui.instrumentalGapMs && until > 0;
 
   return { inGap: inGap, untilNextMs: until, atEnd: false };
 };

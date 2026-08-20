@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <title>Karaoke Mode</title>
-<link rel="stylesheet" href="css/app.css?v=4">
+<link rel="stylesheet" href="css/app.css?v=8">
 </head>
 <body>
 
@@ -64,6 +64,11 @@
 
   <header id="player-header" class="player-header">
     <div class="track-meta">
+      <!-- Spinning record. Falls back to an etched blank disc when the source
+           gives us no artwork (manual mode never does). -->
+      <div id="vinyl" class="vinyl">
+        <img id="vinyl-art" class="vinyl-art" alt="">
+      </div>
       <div id="track-title" class="track-title">Waiting for music</div>
       <div id="track-artist" class="track-artist"></div>
     </div>
@@ -71,6 +76,13 @@
       <button id="btn-settings" class="icon-btn" aria-label="Settings">⚙</button>
     </div>
   </header>
+
+  <!-- Shown when LRCLIB has the words but no timestamps. Without this the
+       app just silently stops scrolling, which reads as a broken sync. -->
+  <div id="unsynced-note" class="unsynced-note is-hidden">
+    <span>No timing for this track &mdash; showing plain lyrics</span>
+    <button id="btn-find-synced" class="btn-inline">Find a synced version</button>
+  </div>
 
   <!-- The lyric column. Everything else is chrome around this. -->
   <main id="lyrics" class="lyrics" role="main" aria-live="off"></main>
@@ -83,9 +95,16 @@
     <button id="overlay-action" class="btn btn-primary is-hidden"></button>
   </div>
 
-  <!-- Instrumental countdown dots -->
+  <!-- Instrumental filler. Two states: an equalizer while the gap is long,
+       then a count-in as the next sung line approaches. -->
   <div id="gap-indicator" class="gap-indicator is-hidden">
-    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+    <div id="gap-eq" class="eq">
+      <span></span><span></span><span></span><span></span><span></span>
+      <span></span><span></span><span></span><span></span>
+    </div>
+    <div id="gap-countdown" class="countdown is-hidden">
+      <span class="pip"></span><span class="pip"></span><span class="pip"></span>
+    </div>
   </div>
 
   <footer class="player-footer">
@@ -183,6 +202,6 @@
   </div>
 </section>
 
-<script type="module" src="js/main.js?v=4"></script>
+<script type="module" src="js/main.js?v=8"></script>
 </body>
 </html>

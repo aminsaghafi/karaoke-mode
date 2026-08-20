@@ -221,6 +221,57 @@ button { font-family: inherit; cursor: pointer; }
   z-index: 3;
 }
 .track-meta { min-width: 0; }          /* lets the ellipsis actually work */
+
+/* ----------------------------------------------------------- vinyl disc */
+
+.vinyl {
+  position: relative;
+  width: 76px;
+  height: 76px;
+  margin-bottom: 12px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #0a0a0a;
+  /* Etched grooves, so a track with no artwork still reads as a record
+     rather than an empty circle. */
+  background-image: repeating-radial-gradient(circle at 50% 50%,
+    rgba(255, 255, 255, 0.055) 0 1px, rgba(0, 0, 0, 0) 1px 4px);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.6), inset 0 0 0 1px rgba(255, 255, 255, 0.09);
+  animation: vinylSpin 6s linear infinite;
+  /* Paused by default: the record only turns when the music does. */
+  animation-play-state: paused;
+}
+.vinyl.is-spinning { animation-play-state: running; }
+
+.vinyl-art {
+  position: absolute;
+  top: 0; left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 450ms var(--ease);
+}
+.vinyl-art.is-loaded { opacity: 1; }
+
+/* Spindle hole, punched through the artwork. */
+.vinyl::after {
+  content: '';
+  position: absolute;
+  top: 50%; left: 50%;
+  width: 15px; height: 15px;
+  margin: -7.5px 0 0 -7.5px;
+  border-radius: 50%;
+  background: var(--bg);
+  box-shadow: 0 0 0 3px rgba(0, 0, 0, 0.5), inset 0 0 0 1px rgba(255, 255, 255, 0.14);
+  z-index: 2;
+}
+
+@keyframes vinylSpin {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
 .track-title {
   font-size: 19px; font-weight: 600;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
@@ -230,6 +281,34 @@ button { font-family: inherit; cursor: pointer; }
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
 .header-actions { display: flex; gap: 4px; flex: 0 0 auto; }
+
+/* ------------------------------------------------------- unsynced notice */
+
+.unsynced-note {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 14px;
+  flex: 0 0 auto;
+  margin: 0 28px 6px;
+  padding: 10px 18px;
+  border-radius: 10px;
+  background: rgba(255, 176, 32, 0.10);
+  color: var(--warn);
+  font-size: 15px;
+  z-index: 3;
+}
+.btn-inline {
+  background: transparent;
+  border: 1px solid currentColor;
+  border-radius: 999px;
+  color: inherit;
+  font-size: 14px;
+  padding: 8px 16px;
+  min-height: 40px;
+}
+.btn-inline:active { background: rgba(255, 176, 32, 0.18); }
 
 /* The lyric column. overflow:hidden because we move it with a transform,
    never with native scrolling -- native scroll would fight the auto-follow. */
@@ -311,22 +390,66 @@ button { font-family: inherit; cursor: pointer; }
   top: 50%;
   transform: translate(-50%, -50%);
   display: flex;
-  gap: 14px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  height: 96px;                /* fixed, so swapping states does not jump */
   z-index: 3;
   pointer-events: none;
 }
-.gap-indicator .dot {
-  width: 14px; height: 14px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.75);
-  animation: pulse 1.4s infinite var(--ease);
-}
-.gap-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
-.gap-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
 
-@keyframes pulse {
-  0%, 100% { opacity: 0.2; transform: scale(0.8); }
-  50%      { opacity: 1;   transform: scale(1.15); }
+/* --- equalizer: shown while the instrumental stretch is still long ------ */
+
+.eq {
+  display: flex;
+  align-items: flex-end;
+  gap: 7px;
+  height: 72px;
+}
+.eq span {
+  display: block;
+  width: 9px;
+  height: 18%;
+  border-radius: 5px;
+  background: linear-gradient(to top, rgba(255,255,255,0.30), rgba(255,255,255,0.92));
+  animation-name: eqBounce;
+  animation-iteration-count: infinite;
+  animation-timing-function: ease-in-out;
+}
+
+/* Deliberately mismatched durations. Equal ones march in lockstep and read
+   as a loading spinner; coprime-ish ones never resync, so it feels played
+   rather than animated. */
+.eq span:nth-child(1) { animation-duration: 0.92s; animation-delay: 0.00s; }
+.eq span:nth-child(2) { animation-duration: 1.27s; animation-delay: 0.11s; }
+.eq span:nth-child(3) { animation-duration: 0.74s; animation-delay: 0.23s; }
+.eq span:nth-child(4) { animation-duration: 1.41s; animation-delay: 0.06s; }
+.eq span:nth-child(5) { animation-duration: 1.03s; animation-delay: 0.31s; }
+.eq span:nth-child(6) { animation-duration: 0.86s; animation-delay: 0.17s; }
+.eq span:nth-child(7) { animation-duration: 1.33s; animation-delay: 0.02s; }
+.eq span:nth-child(8) { animation-duration: 0.97s; animation-delay: 0.27s; }
+.eq span:nth-child(9) { animation-duration: 1.15s; animation-delay: 0.09s; }
+
+@keyframes eqBounce {
+  0%, 100% { height: 16%; opacity: 0.55; }
+  50%      { height: 100%; opacity: 1; }
+}
+
+/* --- count-in: the last few seconds before the vocal returns ----------- */
+
+.countdown { display: flex; gap: 20px; }
+.countdown .pip {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.16);
+  transition: background 180ms var(--ease), transform 180ms var(--ease),
+              box-shadow 180ms var(--ease);
+}
+.countdown .pip.is-lit {
+  background: #fff;
+  transform: scale(1.3);
+  box-shadow: 0 0 22px rgba(255, 255, 255, 0.55);
 }
 
 /* --------------------------------------------------------------- footer */
