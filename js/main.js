@@ -58,7 +58,7 @@ function cacheElements() {
     'track-title', 'track-artist', 'btn-settings', 'lyrics',
     'vinyl', 'vinyl-art', 'unsynced-note', 'btn-find-synced',
     'overlay', 'overlay-icon', 'overlay-text', 'overlay-sub', 'overlay-action',
-    'gap-indicator', 'gap-countdown', 'glow',
+    'glow',
     'time-current', 'time-total', 'progress-fill',
     'transport', 'btn-back5', 'btn-play', 'btn-fwd5', 'btn-pick',
     'search-input', 'btn-search', 'btn-search-close', 'search-status', 'search-results',
@@ -188,11 +188,47 @@ function applyPalette(url) {
  * lyric timeline -- the glow builds over the last 12s of an instrumental, so
  * the room brightening actually means something is about to happen.
  */
+/* How long the glow takes to bloom to full strength when a gap opens. */
+var GLOW_BLOOM_MS = 2800;
+var glowEnteredAt = 0;
+
+function nowMs() {
+  return (window.performance && window.performance.now)
+    ? window.performance.now() : Date.now();
+}
+
 function setGlow(on, untilNextMs) {
+  var wasOn = el['glow'].classList.contains('is-on');
   el['glow'].classList.toggle('is-on', Boolean(on));
-  if (!on) return;
+
+  if (!on) {
+    glowEnteredAt = 0;
+    return;
+  }
+  if (!wasOn || !glowEnteredAt) glowEnteredAt = nowMs();
+
+  // Broad swell across the last 12s, squared so most of the rise happens late
+  // rather than creeping up linearly from the moment the gap opens.
   var t = Math.max(0, Math.min(1, 1 - (untilNextMs / 12000)));
-  document.documentElement.style.setProperty('--glow-intensity', (0.45 + t * 0.55).toFixed(3));
+  var intensity = 0.40 + (t * t) * 0.35;
+
+  // Then a distinct surge over the final approach. This is what replaced the
+  // three count-in pips -- same signal, carried by the light instead of by
+  // another widget competing with the lyrics.
+  if (untilNextMs < 3000) {
+    intensity += (1 - (untilNextMs / 3000)) * 0.40;
+  }
+
+  // Bloom up over the first few seconds of the gap instead of arriving at
+  // full strength. An interlude opening mid-song otherwise reads as a flash,
+  // when what it should say is "settle back, this part is instrumental".
+  // Smoothstep rather than linear so both ends of the fade are soft.
+  var bloom = Math.max(0, Math.min(1, (nowMs() - glowEnteredAt) / GLOW_BLOOM_MS));
+  bloom = bloom * bloom * (3 - 2 * bloom);
+  intensity *= bloom;
+
+  document.documentElement.style.setProperty(
+    '--glow-intensity', Math.min(1, intensity).toFixed(3));
 }
 
 /** The record turns only while the music does. */
@@ -430,7 +466,6 @@ function renderNow() {
   el['progress-fill'].style.width = dur ? Math.max(0, Math.min(100, (pos / dur) * 100)) + '%' : '0%';
 
   if (!app.lyrics || !app.lyrics.lines.length || app.lyrics.synced === false) {
-    el['gap-indicator'].classList.add('is-hidden');
     setGlow(false, 0);
     return;
   }
@@ -440,40 +475,7 @@ function renderNow() {
   // Instrumental filler, but only while actually playing -- a paused song
   // sitting in a gap should not dance at you.
   var showGap = Boolean(info && info.inGap && app.clock.isPlaying() && el['overlay'].classList.contains('is-hidden'));
-  el['gap-indicator'].classList.toggle('is-hidden', !showGap);
   setGlow(showGap, info ? info.untilNextMs : 0);
-  if (showGap) updateGapVisual(info.untilNextMs);
-}
-
-/* How long before the next line we switch from equalizer to count-in. Three
-   pips at roughly one per second, which is the cadence a band counts in on. */
-var COUNTIN_MS = 3150;
-var pipNodes = null;
-
-/**
- * Swap between the two instrumental states and drive the count-in.
- *
- * The equalizer is pure decoration -- there is no audio in this tab to analyse,
- * so it cannot react to the music. The count-in is the opposite: it carries
- * real information, telling you exactly when to come back in.
- */
-function updateGapVisual(untilNextMs) {
-  var counting = untilNextMs <= COUNTIN_MS;
-
-  el['gap-countdown'].classList.toggle('is-hidden', !counting);
-  if (!counting) return;
-
-  if (!pipNodes) {
-    pipNodes = el['gap-countdown'].querySelectorAll('.pip');
-  }
-
-  // Light one pip per remaining beat, extinguishing left to right.
-  var perPip = COUNTIN_MS / pipNodes.length;
-  var lit = Math.ceil(Math.max(0, untilNextMs) / perPip);
-
-  for (var i = 0; i < pipNodes.length; i++) {
-    pipNodes[i].classList.toggle('is-lit', i < lit);
-  }
 }
 
 /* ---------------------------------------------------------------- search */

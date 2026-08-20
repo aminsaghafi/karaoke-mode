@@ -396,81 +396,77 @@ button { font-family: inherit; cursor: pointer; }
   top: 0; right: 0; bottom: 0; left: 0;
   z-index: 0;                  /* above the backdrop, below every screen */
   pointer-events: none;
+  overflow: hidden;
   opacity: 0;
-  transition: opacity 900ms var(--ease);
+  transition: opacity 320ms linear;
 }
 .glow.is-on { opacity: var(--glow-intensity, 0.85); }
 
-.glow-blob {
+/* Each orbit fills the screen and turns about its centre. The blob inside
+   carries its own transform, so the two compose: the blob sweeps a curved
+   path while independently wandering and swelling. Two cycles of different
+   length means the combined motion has no visible period -- which is most of
+   the difference between "organic" and "four orbs breathing in place". */
+.orbit {
   position: absolute;
-  filter: blur(64px);
-  will-change: transform, opacity;
+  top: 0; right: 0; bottom: 0; left: 0;
+  animation-name: glowOrbit;
+  animation-timing-function: linear;
+  animation-iteration-count: infinite;
+  will-change: transform;
 }
 
-/* Each wash bleeds inward from its edge and stops well short of centre, so
-   the lyric column always sits on plain black. */
-.glow-top {
-  top: -20%; left: -12%; right: -12%; height: 52%;
-  background: radial-gradient(ellipse at 50% 0%, var(--glow-1) 0%, rgba(0,0,0,0) 72%);
-  animation: glowSwellA 9.1s ease-in-out infinite;
-}
-.glow-bottom {
-  bottom: -20%; left: -12%; right: -12%; height: 52%;
-  background: radial-gradient(ellipse at 50% 100%, var(--glow-2) 0%, rgba(0,0,0,0) 72%);
-  animation: glowSwellB 11.3s ease-in-out infinite;
-}
-.glow-left {
-  left: -14%; top: -10%; bottom: -10%; width: 46%;
-  background: radial-gradient(ellipse at 0% 50%, var(--glow-3) 0%, rgba(0,0,0,0) 72%);
-  animation: glowSwellB 7.9s ease-in-out infinite;
-}
-.glow-right {
-  right: -14%; top: -10%; bottom: -10%; width: 46%;
-  background: radial-gradient(ellipse at 100% 50%, var(--glow-1) 0%, rgba(0,0,0,0) 72%);
-  animation: glowSwellA 10.4s ease-in-out infinite;
-}
-
-/* Two curves in opposition, on durations that do not divide evenly, so
-   opposite edges trade brightness and the loop never visibly repeats. */
-@keyframes glowSwellA {
-  0%, 100% { opacity: 0.42; transform: scale(1); }
-  50%      { opacity: 0.98; transform: scale(1.13); }
-}
-@keyframes glowSwellB {
-  0%, 100% { opacity: 0.95; transform: scale(1.11); }
-  50%      { opacity: 0.38; transform: scale(1); }
-}
-
-/* ------------------------------------------------------- gap indicator */
-
-.gap-indicator {
+.blob {
   position: absolute;
-  left: 50%;
-  top: 50%;
-  transform: translate(-50%, -50%);
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  z-index: 3;
-  pointer-events: none;
-}
-
-/* --- count-in: the last few seconds before the vocal returns ----------- */
-
-.countdown { display: flex; gap: 20px; }
-.countdown .pip {
-  width: 18px;
-  height: 18px;
   border-radius: 50%;
-  background: rgba(255, 255, 255, 0.16);
-  transition: background 180ms var(--ease), transform 180ms var(--ease),
-              box-shadow 180ms var(--ease);
+  /* Heavy blur over a solid ellipse falls off less evenly than a
+     radial-gradient, whose mathematically perfect ramp is what reads as an
+     orb rather than as light. */
+  filter: blur(85px);
+  /* Overlaps add as light instead of stacking as shapes. This is what fuses
+     six blobs into one continuous field. */
+  mix-blend-mode: screen;
+  animation-name: glowDrift;
+  animation-timing-function: ease-in-out;
+  animation-iteration-count: infinite;
+  animation-direction: alternate;
+  will-change: transform;
 }
-.countdown .pip.is-lit {
-  background: #fff;
-  transform: scale(1.3);
-  box-shadow: 0 0 22px rgba(255, 255, 255, 0.55);
+
+/* Durations share no common factor, and half the orbits run backwards, so
+   neighbouring blobs are always separating rather than moving as a block. */
+.o1 { animation-duration: 41s; }
+.o2 { animation-duration: 58s; animation-direction: reverse; }
+.o3 { animation-duration: 47s; }
+.o4 { animation-duration: 64s; animation-direction: reverse; }
+.o5 { animation-duration: 53s; }
+.o6 { animation-duration: 37s; animation-direction: reverse; }
+
+/* Sizes and offsets are deliberately uneven -- symmetry was the other half of
+   why the previous version read as four discrete lobes. */
+.b1 { left: -22%;  top: -16%;    width: 74vmin; height: 58vmin;
+      background: var(--glow-1); opacity: 0.58; animation-duration: 11s; }
+.b2 { right: -20%; top: -22%;    width: 62vmin; height: 72vmin;
+      background: var(--glow-2); opacity: 0.52; animation-duration: 14s; }
+.b3 { left: -18%;  bottom: -20%; width: 68vmin; height: 62vmin;
+      background: var(--glow-3); opacity: 0.55; animation-duration: 9s; }
+.b4 { right: -24%; bottom: -14%; width: 58vmin; height: 66vmin;
+      background: var(--glow-1); opacity: 0.48; animation-duration: 16s; }
+.b5 { left: 18%;   top: -30%;    width: 82vmin; height: 48vmin;
+      background: var(--glow-2); opacity: 0.45; animation-duration: 12s; }
+.b6 { right: 14%;  bottom: -28%; width: 78vmin; height: 52vmin;
+      background: var(--glow-3); opacity: 0.50; animation-duration: 17s; }
+
+@keyframes glowOrbit {
+  from { transform: rotate(0deg); }
+  to   { transform: rotate(360deg); }
+}
+
+/* Translation as well as scale, so blobs travel rather than pulse in place. */
+@keyframes glowDrift {
+  0%   { transform: translate(0, 0) scale(1); }
+  50%  { transform: translate(9%, -7%) scale(1.18); }
+  100% { transform: translate(-7%, 8%) scale(0.88); }
 }
 
 /* --------------------------------------------------------------- footer */

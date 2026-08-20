@@ -7,7 +7,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
 <meta name="theme-color" content="#000000">
 <title>Karaoke Mode</title>
-<link rel="stylesheet" href="css/app.css?v=9">
+<link rel="stylesheet" href="css/app.css?v=12">
 </head>
 <body>
 
@@ -19,10 +19,12 @@
      art. Sits above the backdrop and below the lyric column, so it frames the
      screen without ever competing with the words. -->
 <div id="glow" class="glow" aria-hidden="true">
-  <span class="glow-blob glow-top"></span>
-  <span class="glow-blob glow-bottom"></span>
-  <span class="glow-blob glow-left"></span>
-  <span class="glow-blob glow-right"></span>
+  <span class="orbit o1"><i class="blob b1"></i></span>
+  <span class="orbit o2"><i class="blob b2"></i></span>
+  <span class="orbit o3"><i class="blob b3"></i></span>
+  <span class="orbit o4"><i class="blob b4"></i></span>
+  <span class="orbit o5"><i class="blob b5"></i></span>
+  <span class="orbit o6"><i class="blob b6"></i></span>
 </div>
 
 <!-- ============================ SETUP ============================ -->
@@ -103,14 +105,6 @@
     <div id="overlay-text" class="overlay-text"></div>
     <div id="overlay-sub" class="overlay-sub"></div>
     <button id="overlay-action" class="btn btn-primary is-hidden"></button>
-  </div>
-
-  <!-- Count-in. The edge glow carries the long stretch of an instrumental;
-       these pips take over for the last few seconds before the vocal. -->
-  <div id="gap-indicator" class="gap-indicator is-hidden">
-    <div id="gap-countdown" class="countdown is-hidden">
-      <span class="pip"></span><span class="pip"></span><span class="pip"></span>
-    </div>
   </div>
 
   <footer class="player-footer">
@@ -208,6 +202,6 @@
   </div>
 </section>
 
-<script type="module" src="js/main.js?v=9"></script>
+<script type="module" src="js/main.js?v=12"></script>
 </body>
 </html>
