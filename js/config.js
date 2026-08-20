@@ -4,7 +4,7 @@
  * car's touchscreen without editing and redeploying code.
  */
 export var CONFIG = {
-  appName: 'Tesla Lyrics',
+  appName: 'Karaoke Mode',
 
   spotify: {
     // Optional. If you bake your client ID in here it is prefilled on the

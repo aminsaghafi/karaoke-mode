@@ -34,7 +34,7 @@
  *
  *     await MusicKit.configure({
  *       developerToken: <fetched JWT>,
- *       app: { name: 'Tesla Lyrics', build: '1.0' }
+ *       app: { name: 'Karaoke Mode', build: '1.0' }
  *     });
  *     const music = MusicKit.getInstance();
  *     await music.authorize();

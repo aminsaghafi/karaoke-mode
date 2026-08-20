@@ -1,4 +1,4 @@
-# Tesla Lyrics
+# Karaoke Mode
 
 Time-synced lyrics in the Tesla browser. Karaoke-style: the current line is
 large and white, the rest fall away, and the column scrolls itself.
@@ -52,7 +52,7 @@ a phone over Bluetooth — anything with no API to observe.
 ### 2. Deploy to GitHub Pages
 
 ```bash
-git init && git add -A && git commit -m "Tesla Lyrics"
+git init && git add -A && git commit -m "Karaoke Mode"
 git branch -M main
 git remote add origin https://github.com/<you>/<repo>.git
 git push -u origin main

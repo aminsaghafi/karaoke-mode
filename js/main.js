@@ -1,5 +1,5 @@
 /**
- * Tesla Lyrics -- app orchestration.
+ * Karaoke Mode -- app orchestration.
  *
  * Shape of the thing:
  *
