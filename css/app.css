@@ -38,6 +38,75 @@
   --glow-intensity: 0.85;
 }
 
+
+/* ============================== LIGHT THEME ==============================
+   Applied when <html data-theme="light">. main.js resolves the stored
+   preference (dark / light / auto) to an explicit value, so CSS only ever
+   deals with two concrete themes rather than duplicating a media query.
+
+   Most of this is token swaps. The rules that follow the tokens are the
+   places where a colour was hardcoded because it only ever had to work on
+   black -- each needs a genuine inverse, not a variable.
+   ====================================================================== */
+
+:root[data-theme="light"] {
+  --bg: #f4f4f6;
+  --fg-active: #0b0b0c;
+  --fg-near: rgba(0, 0, 0, 0.48);
+  --fg-far: rgba(0, 0, 0, 0.17);
+  --fg-dim: rgba(0, 0, 0, 0.60);
+  --fg-mute: rgba(0, 0, 0, 0.45);
+  /* Spotify green is too light on white to read as a label or a border. */
+  --accent: #10823c;
+  --danger: #c62828;
+  --warn: #9a6300;
+  --surface: #ffffff;
+  --surface-2: #e9e9ec;
+  --border: rgba(0, 0, 0, 0.15);
+}
+
+/* Vignette has to lighten the centre rather than darken it. */
+:root[data-theme="light"] .backdrop::after {
+  background: radial-gradient(ellipse at center,
+    rgba(255,255,255,0.55) 0%, rgba(255,255,255,0.92) 75%);
+}
+:root[data-theme="light"] .backdrop { opacity: 0; }
+:root[data-theme="light"] .backdrop.is-on { opacity: 0.30; }
+
+/* Screen blending only brightens, so on white it erases the glow entirely.
+   Multiply is its counterpart: the colours darken the page instead. */
+:root[data-theme="light"] .blob { mix-blend-mode: multiply; }
+
+:root[data-theme="light"] .field-input,
+:root[data-theme="light"] .redirect-uri { background: #ffffff; }
+
+:root[data-theme="light"] .btn-play,
+:root[data-theme="light"] .btn-chip.is-on { background: #111113; color: #ffffff; }
+
+/* Blank record: light disc with dark grooves. */
+:root[data-theme="light"] .vinyl {
+  background: #dededf;
+  background-image: repeating-radial-gradient(circle at 50% 50%,
+    rgba(0,0,0,0.07) 0 1px, rgba(0,0,0,0) 1px 4px);
+  box-shadow: 0 6px 18px rgba(0,0,0,0.22), inset 0 0 0 1px rgba(0,0,0,0.10);
+}
+:root[data-theme="light"] .vinyl::after {
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.14), inset 0 0 0 1px rgba(0,0,0,0.18);
+}
+
+/* The halo behind the active line has to be light to lift it off the page. */
+:root[data-theme="light"] .lyric-line.is-active {
+  text-shadow: 0 2px 22px rgba(255,255,255,0.9);
+}
+
+:root[data-theme="light"] .progress-track { background: rgba(0,0,0,0.14); }
+:root[data-theme="light"] .progress-fill  { background: rgba(0,0,0,0.62); }
+
+:root[data-theme="light"] .notice-error { background: rgba(198,40,40,0.10); }
+:root[data-theme="light"] .notice-warn,
+:root[data-theme="light"] .unsynced-note { background: rgba(154,99,0,0.12); }
+:root[data-theme="light"] .btn-inline:active { background: rgba(154,99,0,0.20); }
+
 * { box-sizing: border-box; }
 
 html, body {

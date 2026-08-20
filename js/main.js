@@ -21,6 +21,7 @@ import * as store from './lib/store.js';
 import { PlaybackClock } from './lib/clock.js';
 import { isSecureContextOk } from './lib/pkce.js';
 import { extractPalette } from './lib/palette.js';
+import * as theme from './lib/theme.js';
 import { LyricsView } from './ui/lyricsView.js';
 import { fetchLyrics, searchLyrics, recordToLyrics } from './lyrics/lrclib.js';
 import { isDifferentTrack } from './sources/source.js';
@@ -63,7 +64,7 @@ function cacheElements() {
     'transport', 'btn-back5', 'btn-play', 'btn-fwd5', 'btn-pick',
     'search-input', 'btn-search', 'btn-search-close', 'search-status', 'search-results',
     'btn-offset-down', 'btn-offset-up', 'offset-value', 'btn-backdrop',
-    'btn-change-source', 'btn-settings-close', 'settings-source-name'
+    'btn-change-source', 'btn-settings-close', 'settings-source-name', 'theme-hint'
   ];
   for (var i = 0; i < ids.length; i++) {
     el[ids[i]] = $(ids[i]);
@@ -131,6 +132,41 @@ function applyTextSize(key) {
     chips[i].classList.toggle('is-on', chips[i].getAttribute('data-size') === key);
   }
   if (app.view) app.view.relayout();
+}
+
+/**
+ * Apply a theme preference and reflect it in the settings row.
+ *
+ * Position is only requested when the driver actively picks Auto. Prompting
+ * for location on first load -- before anyone has asked for anything -- would
+ * be intrusive, so until then Auto falls back to the browser preference or a
+ * clock window.
+ */
+function applyThemePref(pref, askForPosition) {
+  theme.setPreference(pref);
+
+  var chips = document.querySelectorAll('[data-theme-pref]');
+  for (var i = 0; i < chips.length; i++) {
+    chips[i].classList.toggle('is-on', chips[i].getAttribute('data-theme-pref') === pref);
+  }
+
+  function finish() {
+    var resolved = theme.applyTheme();
+    var hint = el['theme-hint'];
+    if (pref !== 'auto') {
+      hint.textContent = 'Always ' + pref;
+    } else if (theme.hasPosition()) {
+      hint.textContent = 'Follows sunset \u2014 currently ' + resolved;
+    } else {
+      hint.textContent = 'Currently ' + resolved + ' \u2014 tap Auto to use sunset times';
+    }
+  }
+
+  if (pref === 'auto' && askForPosition) {
+    theme.ensurePosition().then(finish);
+  } else {
+    finish();
+  }
 }
 
 function applyBackdropSetting(on) {
@@ -721,6 +757,15 @@ function wireEvents() {
     })(sizeChips[k]);
   }
 
+  var themeChips = document.querySelectorAll('[data-theme-pref]');
+  for (var tc = 0; tc < themeChips.length; tc++) {
+    (function (chip) {
+      chip.addEventListener('click', function () {
+        applyThemePref(chip.getAttribute('data-theme-pref'), true);
+      });
+    })(themeChips[tc]);
+  }
+
   el['btn-backdrop'].addEventListener('click', function () {
     applyBackdropSetting(!store.get('backdrop', true));
   });
@@ -767,6 +812,9 @@ function boot() {
       setOverlay('', '', '');
     }
   };
+
+  applyThemePref(theme.getPreference(), false);
+  theme.watchTheme(function () { applyThemePref(theme.getPreference(), false); });
 
   applyTextSize(store.get('textSize', 'm'));
   applyBackdropSetting(store.get('backdrop', true));
