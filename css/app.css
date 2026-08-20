@@ -25,6 +25,8 @@
   --surface-2: #1f1f1f;
   --border: rgba(255, 255, 255, 0.14);
 
+  --vinyl-size: 76px;
+
   /* Driven by the text-size setting */
   --lyric-size: 44px;
   --lyric-gap: 26px;
@@ -275,20 +277,30 @@ button { font-family: inherit; cursor: pointer; }
 .btn-chip.is-on { background: #fff; color: #000; }
 
 .icon-btn {
-  width: 56px; height: 56px;
-  font-size: 22px;
-  background: transparent;
-  color: var(--fg-mute);
-  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  background: var(--surface);
+  color: var(--fg-dim);
+  border: 1px solid var(--border);
   border-radius: 50%;
+  transition: background 150ms var(--ease), transform 100ms var(--ease);
 }
-.icon-btn:active { background: var(--surface); }
+.icon-btn:active { background: var(--surface-2); transform: scale(0.94); }
+
+.icon-cog { width: 21px; height: 21px; display: block; }
 
 /* --------------------------------------------------------------- player */
 
 .player-header {
   display: flex;
-  align-items: center;
+  /* Top-aligned, not centred. Centring put the button against the midpoint of
+     the whole left block -- vinyl plus two lines of text -- which lines up
+     with nothing. */
+  align-items: flex-start;
   justify-content: space-between;
   gap: 16px;
   padding: 18px 28px 10px;
@@ -301,8 +313,8 @@ button { font-family: inherit; cursor: pointer; }
 
 .vinyl {
   position: relative;
-  width: 76px;
-  height: 76px;
+  width: var(--vinyl-size);
+  height: var(--vinyl-size);
   margin-bottom: 12px;
   border-radius: 50%;
   overflow: hidden;
@@ -355,7 +367,13 @@ button { font-family: inherit; cursor: pointer; }
   font-size: 15px; color: var(--fg-mute); margin-top: 2px;
   white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
 }
-.header-actions { display: flex; gap: 4px; flex: 0 0 auto; }
+.header-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex: 0 0 auto;
+  height: var(--vinyl-size);
+}
 
 /* ------------------------------------------------------- unsynced notice */
 
