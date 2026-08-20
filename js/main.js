@@ -189,7 +189,7 @@ function applyPalette(url) {
  * the room brightening actually means something is about to happen.
  */
 /* How long the glow takes to bloom to full strength when a gap opens. */
-var GLOW_BLOOM_MS = 2800;
+var GLOW_BLOOM_MS = 1100;
 var glowEnteredAt = 0;
 
 function nowMs() {
