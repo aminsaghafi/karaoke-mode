@@ -1,0 +1,188 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<!-- The Tesla browser reports a wide viewport; lock scale so the lyric column
+     never zooms out from under a stray pinch. -->
+<meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#000000">
+<title>Tesla Lyrics</title>
+<link rel="stylesheet" href="css/app.css?v=2">
+</head>
+<body>
+
+<!-- Blurred artwork backdrop. Deliberately very dim: it should read as
+     atmosphere, never as something competing for the driver's attention. -->
+<div id="backdrop" class="backdrop" aria-hidden="true"></div>
+
+<!-- ============================ SETUP ============================ -->
+<section id="screen-setup" class="screen is-visible">
+  <div class="setup-inner">
+    <h1 class="setup-title">Tesla Lyrics</h1>
+    <p class="setup-sub">Time-synced lyrics for whatever you are playing.</p>
+
+    <div id="setup-insecure" class="notice notice-warn is-hidden">
+      This page is not on HTTPS, so Spotify sign-in is unavailable.
+      Manual mode still works.
+    </div>
+
+    <div class="source-grid">
+      <button class="source-card" data-source="spotify">
+        <span class="source-name">Spotify</span>
+        <span class="source-desc">Reads what your car is already playing. No tapping while you drive.</span>
+        <span class="source-badge" id="spotify-badge">Not connected</span>
+      </button>
+
+      <button class="source-card" data-source="manual">
+        <span class="source-name">Manual</span>
+        <span class="source-desc">Search a song and tap to sync. Works with radio, USB, or your phone.</span>
+        <span class="source-badge">Always available</span>
+      </button>
+    </div>
+
+    <!-- Spotify first-run config -->
+    <div id="spotify-config" class="config-panel is-hidden">
+      <label class="field-label" for="client-id">Spotify Client ID</label>
+      <input id="client-id" class="field-input" type="text" autocomplete="off"
+             autocapitalize="off" spellcheck="false"
+             placeholder="Paste from developer.spotify.com">
+      <p class="field-help">
+        Add this exact URI as a Redirect URI in your Spotify app settings:
+      </p>
+      <code id="redirect-uri" class="redirect-uri"></code>
+      <div class="config-actions">
+        <button id="btn-spotify-connect" class="btn btn-primary">Connect Spotify</button>
+        <button id="btn-spotify-forget" class="btn btn-ghost is-hidden">Sign out</button>
+      </div>
+      <p id="setup-error" class="notice notice-error is-hidden"></p>
+    </div>
+  </div>
+</section>
+
+<!-- ============================ PLAYER ============================ -->
+<section id="screen-player" class="screen">
+
+  <header id="player-header" class="player-header">
+    <div class="track-meta">
+      <div id="track-title" class="track-title">Waiting for music</div>
+      <div id="track-artist" class="track-artist"></div>
+    </div>
+    <div class="header-actions">
+      <button id="btn-settings" class="icon-btn" aria-label="Settings">⚙</button>
+    </div>
+  </header>
+
+  <!-- The lyric column. Everything else is chrome around this. -->
+  <main id="lyrics" class="lyrics" role="main" aria-live="off"></main>
+
+  <!-- Status overlays, shown one at a time in the middle of the column -->
+  <div id="overlay" class="overlay is-hidden">
+    <div id="overlay-icon" class="overlay-icon"></div>
+    <div id="overlay-text" class="overlay-text"></div>
+    <div id="overlay-sub" class="overlay-sub"></div>
+    <button id="overlay-action" class="btn btn-primary is-hidden"></button>
+  </div>
+
+  <!-- Instrumental countdown dots -->
+  <div id="gap-indicator" class="gap-indicator is-hidden">
+    <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+  </div>
+
+  <footer class="player-footer">
+    <div class="progress-row">
+      <span id="time-current" class="time">0:00</span>
+      <div class="progress-track"><div id="progress-fill" class="progress-fill"></div></div>
+      <span id="time-total" class="time">0:00</span>
+    </div>
+
+    <!-- Transport, only shown for sources we actually control (manual mode) -->
+    <div id="transport" class="transport is-hidden">
+      <button id="btn-back5" class="btn btn-round">−5s</button>
+      <button id="btn-play" class="btn btn-round btn-play">▶</button>
+      <button id="btn-fwd5" class="btn btn-round">+5s</button>
+      <button id="btn-pick" class="btn btn-ghost">Change song</button>
+    </div>
+  </footer>
+</section>
+
+<!-- ============================ SEARCH ============================ -->
+<section id="screen-search" class="screen">
+  <div class="search-inner">
+    <!-- A real <form> so the Tesla on-screen keyboard's Go/Enter key submits.
+         Listening for keydown alone misses it on some soft keyboards. -->
+    <form id="search-form" class="search-bar" action="#">
+      <input id="search-input" class="field-input" type="search"
+             autocomplete="off" autocapitalize="off" spellcheck="false"
+             placeholder="Song name, or song and artist">
+      <button id="btn-search" class="btn btn-primary" type="submit">Search</button>
+      <button id="btn-search-close" class="btn btn-ghost" type="button">Close</button>
+    </form>
+    <div id="search-status" class="search-status"></div>
+    <div id="search-results" class="search-results"></div>
+  </div>
+</section>
+
+<!-- ============================ SETTINGS ============================ -->
+<section id="screen-settings" class="screen">
+  <div class="settings-inner">
+    <h2 class="settings-title">Settings</h2>
+
+    <div class="setting-row">
+      <div class="setting-label">
+        <span>Lyric timing</span>
+        <small>Nudge earlier or later if lines feel off</small>
+      </div>
+      <div class="setting-control">
+        <button id="btn-offset-down" class="btn btn-round">−</button>
+        <span id="offset-value" class="setting-value">0.0s</span>
+        <button id="btn-offset-up" class="btn btn-round">+</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">
+        <span>Text size</span>
+        <small>Bigger is easier at a glance</small>
+      </div>
+      <div class="setting-control">
+        <button class="btn btn-chip" data-size="s">S</button>
+        <button class="btn btn-chip" data-size="m">M</button>
+        <button class="btn btn-chip" data-size="l">L</button>
+        <button class="btn btn-chip" data-size="xl">XL</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">
+        <span>Album art backdrop</span>
+        <small>Subtle blurred artwork behind the lyrics</small>
+      </div>
+      <div class="setting-control">
+        <button id="btn-backdrop" class="btn btn-chip">On</button>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-label">
+        <span>Source</span>
+        <small id="settings-source-name">—</small>
+      </div>
+      <div class="setting-control">
+        <button id="btn-change-source" class="btn btn-ghost">Change</button>
+      </div>
+    </div>
+
+    <div class="settings-actions">
+      <button id="btn-settings-close" class="btn btn-primary">Done</button>
+    </div>
+
+    <p class="settings-credit">
+      Lyrics from <strong>LRCLIB</strong>, a free community database.
+      Nothing is stored by this app.
+    </p>
+  </div>
+</section>
+
+<script type="module" src="js/main.js?v=2"></script>
+</body>
+</html>

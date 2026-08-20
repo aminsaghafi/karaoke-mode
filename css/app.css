@@ -1,0 +1,406 @@
+/* ==========================================================================
+   Tesla Lyrics
+
+   Design constraints, all downstream of "this is used in a moving car":
+     - Pure black background. Tesla screens are large and bright; at night an
+       off-black grey glows across the whole cabin.
+     - One thing in focus at a time. The active line is white and large,
+       everything else falls away fast.
+     - Touch targets never below ~56px. The screen moves while you aim at it.
+     - No hover states -- there is no cursor.
+     - Transitions stay short (<250ms) so nothing feels laggy on older MCUs.
+   ========================================================================== */
+
+:root {
+  --bg: #000;
+  --fg-active: #fff;
+  --fg-near: rgba(255, 255, 255, 0.45);
+  --fg-far: rgba(255, 255, 255, 0.20);
+  --fg-dim: rgba(255, 255, 255, 0.55);
+  --fg-mute: rgba(255, 255, 255, 0.35);
+  --accent: #1db954;
+  --danger: #ff5c5c;
+  --warn: #ffb020;
+  --surface: #141414;
+  --surface-2: #1f1f1f;
+  --border: rgba(255, 255, 255, 0.14);
+
+  /* Driven by the text-size setting */
+  --lyric-size: 44px;
+  --lyric-gap: 26px;
+
+  --ease: cubic-bezier(0.22, 0.61, 0.36, 1);
+}
+
+* { box-sizing: border-box; }
+
+html, body {
+  margin: 0;
+  padding: 0;
+  height: 100%;
+  overflow: hidden;                     /* the app owns all scrolling */
+  background: var(--bg);
+  color: var(--fg-active);
+  font-family: -apple-system, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;   /* no blue flash on tap */
+  -webkit-user-select: none;
+  user-select: none;
+  overscroll-behavior: none;            /* kill rubber-band bounce */
+}
+
+button { font-family: inherit; cursor: pointer; }
+
+.is-hidden { display: none !important; }
+
+/* ------------------------------------------------------------- backdrop */
+
+.backdrop {
+  position: fixed;
+  inset: -60px;                         /* overscan so the blur has no edge */
+  background-position: center;
+  background-size: cover;
+  filter: blur(64px) saturate(1.3);
+  opacity: 0;
+  transform: scale(1.1);
+  transition: opacity 700ms var(--ease);
+  z-index: 0;
+  pointer-events: none;
+}
+.backdrop.is-on { opacity: 0.22; }
+
+/* Vignette keeps the centre of the lyric column dark enough to read. */
+.backdrop::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.9) 75%);
+}
+
+/* -------------------------------------------------------------- screens */
+
+.screen {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  display: none;
+  flex-direction: column;
+}
+.screen.is-visible { display: flex; }
+
+/* ---------------------------------------------------------------- setup */
+
+.setup-inner {
+  margin: auto;
+  width: 100%;
+  max-width: 780px;
+  padding: 32px;
+  text-align: center;
+}
+.setup-title { font-size: 40px; font-weight: 600; margin: 0 0 8px; letter-spacing: -0.02em; }
+.setup-sub { font-size: 18px; color: var(--fg-dim); margin: 0 0 36px; }
+
+.source-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 24px;
+}
+@media (max-width: 700px) { .source-grid { grid-template-columns: 1fr; } }
+
+.source-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  padding: 24px;
+  min-height: 150px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--fg-active);
+  transition: background 150ms var(--ease), border-color 150ms var(--ease);
+}
+.source-card:active { background: var(--surface-2); }
+.source-card.is-selected { border-color: var(--accent); }
+.source-name { font-size: 22px; font-weight: 600; }
+.source-desc { font-size: 15px; color: var(--fg-dim); line-height: 1.4; flex: 1; }
+.source-badge { font-size: 13px; color: var(--fg-mute); text-transform: uppercase; letter-spacing: 0.06em; }
+.source-badge.is-good { color: var(--accent); }
+
+.config-panel {
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  padding: 24px;
+}
+.field-label { display: block; font-size: 14px; color: var(--fg-dim); margin-bottom: 8px; }
+.field-input {
+  width: 100%;
+  height: 56px;
+  padding: 0 16px;
+  font-size: 17px;
+  color: var(--fg-active);
+  background: #0b0b0b;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  -webkit-user-select: text;
+  user-select: text;
+}
+.field-input:focus { outline: none; border-color: var(--accent); }
+.field-help { font-size: 14px; color: var(--fg-dim); margin: 18px 0 8px; }
+
+.redirect-uri {
+  display: block;
+  padding: 12px 14px;
+  font-family: ui-monospace, Menlo, Consolas, monospace;
+  font-size: 14px;
+  color: var(--accent);
+  background: #0b0b0b;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  word-break: break-all;
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+.config-actions { display: flex; gap: 12px; margin-top: 20px; }
+
+.notice {
+  padding: 14px 16px;
+  border-radius: 10px;
+  font-size: 15px;
+  line-height: 1.4;
+  margin: 16px 0;
+  text-align: left;
+}
+.notice-error { background: rgba(255, 92, 92, 0.12); color: var(--danger); }
+.notice-warn  { background: rgba(255, 176, 32, 0.12); color: var(--warn); }
+
+/* -------------------------------------------------------------- buttons */
+
+.btn {
+  height: 56px;
+  padding: 0 24px;
+  font-size: 17px;
+  font-weight: 500;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  transition: transform 100ms var(--ease), background 150ms var(--ease);
+}
+.btn:active { transform: scale(0.96); }
+.btn-primary { background: var(--accent); color: #000; }
+.btn-ghost   { background: transparent; color: var(--fg-dim); border-color: var(--border); }
+.btn-round   { width: 72px; height: 72px; padding: 0; font-size: 18px;
+               background: var(--surface); color: var(--fg-active); border-color: var(--border); }
+.btn-play    { width: 88px; height: 88px; font-size: 30px; background: #fff; color: #000; }
+.btn-chip    { height: 48px; padding: 0 18px; font-size: 16px;
+               background: var(--surface); color: var(--fg-dim); border-color: var(--border); }
+.btn-chip.is-on { background: #fff; color: #000; }
+
+.icon-btn {
+  width: 56px; height: 56px;
+  font-size: 22px;
+  background: transparent;
+  color: var(--fg-mute);
+  border: none;
+  border-radius: 50%;
+}
+.icon-btn:active { background: var(--surface); }
+
+/* --------------------------------------------------------------- player */
+
+.player-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 28px 10px;
+  flex: 0 0 auto;
+  z-index: 3;
+}
+.track-meta { min-width: 0; }          /* lets the ellipsis actually work */
+.track-title {
+  font-size: 19px; font-weight: 600;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.track-artist {
+  font-size: 15px; color: var(--fg-mute); margin-top: 2px;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.header-actions { display: flex; gap: 4px; flex: 0 0 auto; }
+
+/* The lyric column. overflow:hidden because we move it with a transform,
+   never with native scrolling -- native scroll would fight the auto-follow. */
+.lyrics {
+  position: relative;
+  flex: 1 1 auto;
+  overflow: hidden;
+  padding: 0 48px;
+  z-index: 2;
+  /* Fade the top and bottom so lines dissolve rather than clip. */
+  -webkit-mask-image: linear-gradient(to bottom, transparent 0%, #000 16%, #000 84%, transparent 100%);
+  mask-image: linear-gradient(to bottom, transparent 0%, #000 16%, #000 84%, transparent 100%);
+}
+
+.lyrics-scroller {
+  transition: transform 420ms var(--ease);
+  will-change: transform;
+}
+.lyrics-spacer { height: 50vh; }
+
+.lyric-line {
+  font-size: var(--lyric-size);
+  font-weight: 600;
+  line-height: 1.22;
+  letter-spacing: -0.015em;
+  padding: calc(var(--lyric-gap) / 2) 0;
+  color: var(--fg-far);
+  text-align: center;
+  transition: color 260ms var(--ease), opacity 260ms var(--ease), transform 260ms var(--ease);
+  opacity: 0.5;
+  transform: scale(0.97);
+  transform-origin: center;
+}
+.lyric-line.is-far    { color: var(--fg-far);    opacity: 0.55; }
+.lyric-line.is-near   { color: var(--fg-near);   opacity: 0.8; }
+.lyric-line.is-active {
+  color: var(--fg-active);
+  opacity: 1;
+  transform: scale(1);
+  text-shadow: 0 2px 24px rgba(0, 0, 0, 0.6);
+}
+.lyric-line.is-break { color: var(--fg-far); font-size: 32px; letter-spacing: 0.3em; }
+
+/* Unsynced lyrics: no line to highlight, so render as a plain readable block
+   and let the driver scroll it themselves. */
+.lyrics.is-unsynced { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+.lyrics.is-unsynced .lyrics-spacer { height: 12vh; }
+.lyrics.is-unsynced .lyric-line {
+  font-size: 26px; font-weight: 500;
+  color: var(--fg-near); opacity: 1; transform: none;
+  padding: 8px 0;
+}
+
+/* -------------------------------------------------------------- overlay */
+
+.overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  text-align: center;
+  padding: 40px;
+  z-index: 4;
+  pointer-events: none;
+}
+.overlay .btn { pointer-events: auto; margin-top: 12px; }
+.overlay-icon { font-size: 52px; opacity: 0.5; }
+.overlay-text { font-size: 26px; font-weight: 600; }
+.overlay-sub  { font-size: 17px; color: var(--fg-mute); max-width: 520px; line-height: 1.45; }
+
+/* ------------------------------------------------------- gap indicator */
+
+.gap-indicator {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  gap: 14px;
+  z-index: 3;
+  pointer-events: none;
+}
+.gap-indicator .dot {
+  width: 14px; height: 14px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.75);
+  animation: pulse 1.4s infinite var(--ease);
+}
+.gap-indicator .dot:nth-child(2) { animation-delay: 0.2s; }
+.gap-indicator .dot:nth-child(3) { animation-delay: 0.4s; }
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.2; transform: scale(0.8); }
+  50%      { opacity: 1;   transform: scale(1.15); }
+}
+
+/* --------------------------------------------------------------- footer */
+
+.player-footer { flex: 0 0 auto; padding: 10px 28px 22px; z-index: 3; }
+
+.progress-row { display: flex; align-items: center; gap: 14px; }
+.time { font-size: 13px; color: var(--fg-mute); font-variant-numeric: tabular-nums; min-width: 42px; }
+.time:last-child { text-align: right; }
+.progress-track { flex: 1; height: 4px; background: rgba(255,255,255,0.14); border-radius: 2px; overflow: hidden; }
+.progress-fill  { height: 100%; width: 0; background: rgba(255,255,255,0.7); border-radius: 2px; }
+
+.transport {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 20px;
+  margin-top: 18px;
+}
+
+/* --------------------------------------------------------------- search */
+
+.search-inner { display: flex; flex-direction: column; height: 100%; padding: 24px 28px; gap: 18px; }
+.search-bar { display: flex; gap: 12px; flex: 0 0 auto; }
+.search-bar .field-input { flex: 1; }
+.search-status { font-size: 15px; color: var(--fg-mute); flex: 0 0 auto; min-height: 20px; }
+.search-results { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+.result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  width: 100%;
+  min-height: 76px;
+  padding: 14px 18px;
+  margin-bottom: 10px;
+  text-align: left;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--fg-active);
+}
+.result:active { background: var(--surface-2); }
+.result-main { min-width: 0; }
+.result-title  { font-size: 17px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.result-artist { font-size: 14px; color: var(--fg-mute); margin-top: 2px;
+                 white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.result-tag { font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase;
+              color: var(--fg-mute); flex: 0 0 auto; }
+.result-tag.is-synced { color: var(--accent); }
+
+/* ------------------------------------------------------------- settings */
+
+.settings-inner { margin: auto; width: 100%; max-width: 700px; padding: 32px; }
+.settings-title { font-size: 28px; font-weight: 600; margin: 0 0 28px; }
+
+.setting-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  padding: 20px 0;
+  border-bottom: 1px solid var(--border);
+}
+.setting-label span  { display: block; font-size: 18px; }
+.setting-label small { display: block; font-size: 14px; color: var(--fg-mute); margin-top: 3px; }
+.setting-control { display: flex; align-items: center; gap: 10px; flex: 0 0 auto; }
+.setting-value { font-size: 17px; min-width: 68px; text-align: center; font-variant-numeric: tabular-nums; }
+
+.settings-actions { display: flex; justify-content: flex-end; margin-top: 28px; }
+.settings-credit { font-size: 13px; color: var(--fg-mute); text-align: center; margin-top: 24px; line-height: 1.5; }
+
+/* Model S/X and other tall screens get a bit more room to breathe. */
+@media (min-height: 900px) {
+  .lyrics { padding: 0 80px; }
+}
