@@ -10,7 +10,7 @@ export var CONFIG = {
     // Optional. If you bake your client ID in here it is prefilled on the
     // setup screen. A Spotify client ID is not a secret (PKCE has no secret),
     // so committing it is fine.
-    clientId: '',
+    clientId: '6e7ad35605314372a96be5cb98b263c4',
     authorizeUrl: 'https://accounts.spotify.com/authorize',
     tokenUrl: 'https://accounts.spotify.com/api/token',
     scopes: [
